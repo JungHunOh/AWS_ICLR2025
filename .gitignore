@@ -1,0 +1,5 @@
+# tmp dirs and files
+checkpoint
+data/cifar*
+data/tiny*
+*.pyc
