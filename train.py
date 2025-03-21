@@ -7,7 +7,7 @@ import numpy as np
 from models.utils import get_model
 from data.utils import get_loader
 from optim.utils import get_optim
-from utils import Logger, AverageMeter, accuracy, prune, mask_transfer
+from utils import Logger, AverageMeter, prune, mask_transfer
 from tqdm import tqdm
 
 import argparse
