@@ -7,7 +7,7 @@ import numpy as np
 from models.utils import get_model
 from data.utils import get_loader
 from optim.utils import get_optim
-from utils import Logger, AverageMeter, prune, mask_transfer
+from utils import Logger, AverageMeter, prune, mask_transfer, sign_transfer
 from tqdm import tqdm
 
 import argparse
@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 
 # Datasets`
 parser.add_argument('-d', '--dataset', default='cifar10', type=str)
-parser.add_argument('--imagenet_root', default='./data/ILSVRC/Data/CLS-LOC', type=str)
+parser.add_argument('--imagenet_root', default='./data', type=str)
 parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
                     help='number of data loading workers (default: 16)')
 
@@ -62,10 +62,9 @@ def main():
     os.makedirs(f'checkpoint/{args.name}', exist_ok=True)
 
     # Model
+    # Declare the model with a random seed to ensure different initializations
     model = get_model(args)
     model = model.cuda()
-
-    trainloader, testloader = get_loader(args)
 
     np.random.seed(args.seed)
     random.seed(args.seed)
@@ -73,6 +72,8 @@ def main():
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     torch.cuda.manual_seed_all(args.seed)
+
+    trainloader, testloader = get_loader(args)
 
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
     criterion = nn.CrossEntropyLoss()
@@ -93,10 +94,10 @@ def main():
 
         if args.sign_transfer:
             # transfer signed mask
-            mask_transfer.sign_transfer(copy.deepcopy(model.state_dict()), initial_params, model, args.winit_only)
+            sign_transfer(copy.deepcopy(model.state_dict()), initial_params, model)
         elif args.mask_transfer:
             # transfer binary mask
-            mask_transfer.mask_transfer(copy.deepcopy(model.state_dict()), initial_params, model)
+            mask_transfer(copy.deepcopy(model.state_dict()), initial_params, model)
 
         total = 0
         pruned = 0
@@ -133,26 +134,13 @@ def main():
 
             print(f'Train Acc: {train_acc}\nTest Acc: {test_acc}')
 
-        if is_pruning_stage and iteration > 0:
-            pr = prune.prune(model, iteration, args.pruning_iters)
-        else:
-            total = 0
-            pruned = 0
-            for m in model.modules():
-                if hasattr(m, 'fixed_m'):
-                    total += m.weight.numel()
-                    pruned += (m.fixed_m==0).float().sum().item()
-            pr = pruned / total
-        
-        print('Pruning Ratio:', round(pr.item()*100,2))
-
         if is_pruning_stage:
             save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
                 'acc': test_acc,
                 'optimizer' : optimizer.state_dict(),
-            }, checkpoint=f'checkpoint/{args.name}', filename=f'checkpoint_pr{pr}_iter{iteration}.pth.tar')
+            }, checkpoint=f'checkpoint/{args.name}', filename=f'checkpoint_iter{iteration}.pth.tar')
         else:
             save_checkpoint({
                 'epoch': epoch + 1,
@@ -160,6 +148,19 @@ def main():
                 'acc': test_acc,
                 'optimizer' : optimizer.state_dict(),
             }, checkpoint=f'checkpoint/{args.name}', filename=f'checkpoint.pth.tar')
+        
+        if is_pruning_stage and iteration < args.pruning_iters:
+            pr = prune(model, iteration, args.pruning_iters)
+        else:
+            total = 0
+            pruned = 0
+            for m in model.modules():
+                if hasattr(m, 'fixed_m'):
+                    total += m.weight.numel()
+                    pruned += (m.fixed_m==0).float().sum()
+            pr = pruned / total
+        
+        print('Pruning Ratio:', round(pr.item()*100,2))
 
     logger.close()
     logger.plot()

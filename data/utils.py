@@ -46,10 +46,10 @@ def get_loader(args):
         num_classes = 200
         batch_size = 128
 
-        trainset = datasets.ImageFolder('./data/tiny-imagenet-200/train', transform_train)
+        trainset = datasets.ImageFolder('./data/tiny-imagenet-200/train_preprocess', transform_train)
         trainloader = data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=args.workers)
 
-        testset = datasets.ImageFolder('./data/tiny-imagenet-200/val', transform_test)
+        testset = datasets.ImageFolder('./data/tiny-imagenet-200/val_preprocess', transform_test)
         testloader = data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=args.workers)
     
     elif args.dataset == 'imagenet':
