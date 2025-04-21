@@ -19,7 +19,7 @@ The Lottery Ticket Hypothesis (LTH) posits the existence of a sparse subnetwork 
 
 ## CLOSER
 
-<img src='./images/Figure1.png' width='1500' height='320'>
+<img src='./images/Figure1.png' width='1200' height='280'>
 
 For detailed descriptions on the proposed method and experimental results, please refer to the paper.
 
