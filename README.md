@@ -34,7 +34,14 @@ mv tiny-imagenet-200 ./data
 python data/preprocess_tiny_imagenet.py
 ```
 ### ImageNet
-Download the dataset in [https://image-net.org/index.php](https://image-net.org/index.php) and place the folder in ```./data```
+Download the dataset through [https://image-net.org/index.php](https://image-net.org/index.php) and place the folder in ```./data```.
+
+Then, preprocess the validation dataset as follows:
+```bash
+mv ./data/imagenet_val_prep.sh ./data/imagenet/ILSVRC/Data/CLS-LOC/val
+bash ./data/imagenet/ILSVRC/Data/CLS-LOC/val/imagenet_val_prep.sh
+```
+
 The structure should be as follows:
 ```
 ├── imagenet
@@ -44,7 +51,6 @@ The structure should be as follows:
                 ├── train
                 ├── val
 ```
-Run ```./data/imagenet_val_prep.sh``` to preprocess the validation dataset.
 
 
 ## Quickstart
